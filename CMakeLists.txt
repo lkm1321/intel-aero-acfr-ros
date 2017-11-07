@@ -12,6 +12,11 @@ find_package(catkin REQUIRED COMPONENTS
   mavros_extras
   realsense_camera
   rtabmap_ros
+  sensor_msgs
+  cv_bridge
+  roscpp
+  std_msgs
+  image_transport
 )
 
 ## System dependencies are found with CMake's conventions
