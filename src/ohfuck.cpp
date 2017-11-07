@@ -21,7 +21,7 @@ public:
 		_image_pub = _it.advertise("/blob_detector/result", 10); 
 		cv::SimpleBlobDetector:Params params; 
 		// Min and max threshold.
-		params.minThreshold = 200; // mm 
+		params.minThreshold = 100; // mm 
 		params.maxThreshold = 2000; // mm
 		params.filterByArea = true; 
 		params.minArea = 250; // pixel^2
