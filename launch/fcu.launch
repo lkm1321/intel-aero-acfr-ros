@@ -1,0 +1,25 @@
+<launch> 
+	<arg name="fcu_url" default="tcp://localhost:5760" />
+	<arg name="tgt_system" default="1" />
+	<arg name="tgt_component" default="1" />
+	<arg name="log_output" default="log" />
+
+	<include file="$(find mavros)/launch/node.launch">
+		<arg name="pluginlists_yaml" value="$(find intel-aero-acfr)/launch/px4_pluginlists.yaml" />
+		<arg name="config_yaml" value="$(find intel-aero-acfr)/launch/px4_config.yaml" />
+		
+		<arg name="fcu_url" value="$(arg fcu_url)" />
+		<arg name="gcs_url" value=" " />
+		<arg name="tgt_system" value="$(arg tgt_system)" />
+		<arg name="tgt_component" value="$(arg tgt_component)" />
+		<arg name="log_output" value="$(arg log_output)" />
+	</include>
+
+	<node pkg="mavros_extras" type="copter_visualization" name="copter_visualization">
+		<remap from="/local_position" to="/mavros/local_position/pose" />
+		<remap from="/local_setpoint" to="/mavros/setpoint_position/local" />
+		<param name="fixed_frame_id" value="local_origin" />
+		<param name="child_frame_id" value="fcu" />
+	</node> 
+
+</launch>
