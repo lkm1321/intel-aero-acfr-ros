@@ -1,6 +1,13 @@
 <launch> 
 	<include file="$(find intel-aero-acfr)/launch/fcu.launch" />
 	<include file="$(find intel-aero-acfr)/launch/realsense.launch" />
-	<node pkg="tf" type="static_transform_publisher" name="camera_fcu" args="0.1 0 0 0 0 0 1 fcu camera_link 100" />
+<!--	<include file="$(find intel-aero-acfr)/launch/rtabmap.launch" > -->
+<!--		<arg name="rtabmap_args" value="--delete_db_on_start" /> --> 
+<!--		<arg name="depth_topic" value="/camera/depth_registered/sw_registered/image_rect_raw" /> -->
+<!--	</include> -->
+	<node pkg="tf" type="static_transform_publisher" name="camera_fcu" args="0.1 0 0 0 0 0 1 fcu camera_link 10" />
+<!--	<node pkg="tf" type="static_transform_publisher" name="map_local_origin" args="0 0 0 0 0 0 1 map local_origin 10" />	
+	<node pkg="tf" type="static_transform_publisher" name="fcu_clone" args="0.1 0 0 0 0 0 1 fcu_vo camera_link 10" /> -->
 	<node pkg="intel-aero-acfr" type="ohfuck" name="ohfuck" /> 
+	<node pkg="intel-aero-acfr" type="frame_to_guess" name="frame_to_guess" />
 </launch>

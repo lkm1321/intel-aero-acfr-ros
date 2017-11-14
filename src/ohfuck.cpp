@@ -13,13 +13,13 @@
 
 
 class RosBlobDetector {
+
+private:
 	ros::NodeHandle _nh; // Node handle. 
 	image_transport::ImageTransport _it; // Needed for iamge transport.
 	image_transport::Subscriber _image_sub; // Subscription handle.  
 	image_transport::Publisher _image_pub;  // Publication handle. 
-	ros::Publisher _range_pub; 
-	cv::Ptr<cv::SimpleBlobDetector> _detector; 
-	std::vector<cv::KeyPoint> keypoints; 
+	ros::Publisher _range_pub;  
 	float _oldRange; 
 	mavros_msgs::State _current_state; 
 	ros::Subscriber _state_sub; 
@@ -32,49 +32,13 @@ public:
 		_range_pub = _nh.advertise<sensor_msgs::Range>("/blob_detector/range", 50);
 		_state_sub = _nh.subscribe("/mavros/state", 10, &RosBlobDetector::stateCallback, this); 
 		_set_mode_cli = _nh.serviceClient<mavros_msgs::SetMode>("/mavros/set_mode"); 
-		
-		cv::SimpleBlobDetector::Params params; 
-		// Min and max threshold.
-		params.minThreshold = 100; // mm 
-		params.maxThreshold = 2000; // mm
-		params.filterByArea = true; 
-		params.minArea = 250; // pixel^2
-		_detector = cv::SimpleBlobDetector::create(params); 
-		_oldRange = nanf(""); 
 	}
 
 	void stateCallback(const mavros_msgs::State::ConstPtr& state_msg){
 		_current_state = *state_msg; 
-		ROS_INFO("Current mode is %s", _current_state.mode.c_str());
 	}
-
-	void imageCallback(const sensor_msgs::ImageConstPtr& depth_image){
-
-		// Convert to OpenCV image
-		cv_bridge::CvImagePtr depth_image_cv_ptr; 
-
-		try{
-			depth_image_cv_ptr = cv_bridge::toCvCopy(depth_image);  
-		} catch (cv_bridge::Exception& e){
-			ROS_ERROR("cv_bridge exception %s at %s, line %d", e.what(), __FILE__, __LINE__); 
-			return; 
-		}
-		// Min and max values, and the locations 
-		double minVal = 0, maxVal = 0;
-		cv::Point minLoc, maxLoc; 
-
-		//_detector->detect(depth_image_cv_ptr->image, keypoints);
-		// cv::drawKeypoints( depth_image_cv_ptr->image, depth_image_cv_ptr->image, cv::Scalar(0,0,255), cv::DrawMatchesFlags::DRAW_RICH_KEYPOINTS );
-		cv::minMaxLoc(depth_image_cv_ptr->image, &minVal, &maxVal, &minLoc, &maxLoc, (depth_image_cv_ptr->image > 0)); 
-		cv::circle(depth_image_cv_ptr->image, minLoc, 20, cv::Scalar(0) );
-		_image_pub.publish(depth_image_cv_ptr->toImageMsg());
-		
-		float curRange = minVal * 0.001; //minVal is in mm 
-		
-		if (isnan(_oldRange)) _oldRange = curRange; // Initialize if not set. 
-
-		float filteredRange = 0.3*curRange + 0.7*_oldRange; // Filter
-		_oldRange = filteredRange; 
+	
+	void publishRange(const float filteredRange){
 		
 		// Populate sensor_msgs. 
 		sensor_msgs::Range range; 
@@ -89,11 +53,45 @@ public:
 		// Publish sensor_msgs
 		_range_pub.publish(range); 
 		
+	}
+	
+	void imageCallback(const sensor_msgs::ImageConstPtr& depth_image){
+
+		// Convert to OpenCV image
+		cv_bridge::CvImagePtr depth_image_cv_ptr; 
+
+		try{
+			depth_image_cv_ptr = cv_bridge::toCvCopy(depth_image);  
+		} catch (cv_bridge::Exception& e){
+			ROS_ERROR("cv_bridge exception %s at %s, line %d", e.what(), __FILE__, __LINE__); 
+			return; 
+		}
+		// Min and max values, and the locations 
+		double minVal = 0, maxVal = 0;
+		cv::Point minLoc, maxLoc; 
+		
+		cv::minMaxLoc(depth_image_cv_ptr->image, &minVal, &maxVal, &minLoc, &maxLoc, (depth_image_cv_ptr->image > 10)); 
+		cv::circle(depth_image_cv_ptr->image, minLoc, 20, cv::Scalar(0) );
+		_image_pub.publish(depth_image_cv_ptr->toImageMsg());
+		
+		// Convert to metres. 
+		float curRange = minVal * 0.001; //minVal is in mm 
+		
+		if (isnan(_oldRange)) _oldRange = curRange; // Initialize if not set. 
+		
+		// Filter range. 
+		float filteredRange = 0.3*curRange + 0.7*_oldRange; // Filter
+		_oldRange = filteredRange; 
+		
+		// Publish. 
+		// publishRange(filteredRange); 
+		publishRange(curRange); // DEBUG. 
+
 		// We are about to crash in a mission (AUTO.MISSION, AUTO.LOITER)
-		if ( (filteredRange < 0.55) && (_current_state.mode == "AUTO.MISSION") ) {
-		  ROS_WARN("About to crash. Going into POSCTL"); 
+		if ( (filteredRange < 0.55) && ( (_current_state.mode == "AUTO.MISSION") || (_current_state.mode == "POSCTL" ) ) ) {
+		  ROS_WARN("About to crash. Going into AUTO.LOITER"); 
 		  mavros_msgs::SetMode loiter_set_mode; 
-		  loiter_set_mode.request.custom_mode = "POSCTL"; 
+		  loiter_set_mode.request.custom_mode = "AUTO.LOITER"; 
 	  	  // loiter_set_mode.request.base_mode = mavros_msgs::MAV_MODE::MAV_MODE_GUIDED_ARMED; 
 		  _set_mode_cli.call(loiter_set_mode); 
 		}
