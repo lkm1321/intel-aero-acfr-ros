@@ -46,7 +46,7 @@
   <arg name="scan_cloud_topic"        default="/scan_cloud"/>
    
   <arg name="visual_odometry"         default="true"/>          <!-- Launch rtabmap visual odometry node -->
-  <arg name="odom_topic"              default="/odom"/>         <!-- Odometry topic used if visual_odometry is false -->
+  <arg name="odom_topic"              default="/rtabmap/odom"/>         <!-- Odometry topic used -->
   <arg name="odom_frame_id"           default=""/>              <!-- If set, TF is used to get odometry instead of the topic -->
   <arg name="odom_args"               default="$(arg rtabmap_args)"/>
   
@@ -104,7 +104,7 @@
       <param name="subscribe_stereo"     type="bool"   value="$(arg stereo)"/>
       <param name="subscribe_scan"       type="bool"   value="$(arg subscribe_scan)"/>
       <param name="subscribe_scan_cloud" type="bool"   value="$(arg subscribe_scan_cloud)"/>
-      <param name="Rtabmap/StartNewMapOnLoopClosure" value="true"/>
+      <param name="Rtabmap/StartNewMapOnLoopClosure"   value="true"/>
       <param name="map_frame_id" 	 type="string" value="$(arg map_frame_id)"/>
       <param name="frame_id"             type="string" value="$(arg frame_id)"/>
 <!--     <param name="odom_frame_id"        type="string" value="$(arg odom_frame_id)"/> -->
@@ -116,7 +116,9 @@
       <param name="queue_size"           type="int" value="$(arg queue_size)"/>
       
       <param name="Kp/DetectorStrategy"	 value="6" />
-
+      <param name="Vis/MinInliers" value="10" />
+      <param name="RGBD/OptimizeMaxError"                type="double"      value="0.2"  />
+      
       <remap from="rgb/image"       to="$(arg rgb_topic_relay)"/>
       <remap from="depth/image"     to="$(arg depth_topic_relay)"/>
       <remap from="rgb/camera_info" to="$(arg camera_info_topic)"/>
@@ -128,7 +130,7 @@
       
       <remap from="scan"                   to="$(arg scan_topic)"/>
       <remap from="scan_cloud"             to="$(arg scan_cloud_topic)"/>
-      <remap unless="$(arg visual_odometry)" from="odom"  to="$(arg odom_topic)"/>
+      <remap from="odom"  		   to="$(arg odom_topic)"/>
       
       <!-- localization mode -->
 	  <param     if="$(arg localization)" name="Mem/IncrementalMemory" type="string" value="false"/>
