@@ -75,11 +75,11 @@
 	<!-- Correspondences: 0=Features Matching, 1=Optical Flow -->
 	<param name="Vis/CorType" value="0"/>
         <!-- Match strategy: 0 F2M 1 F2F -->
-	<param name="Odom/Strategy" value="1" /> 
+	<param name="Odom/Strategy" value="0" /> 
 	<!-- 0=Vis 1=Icp 2=VisIcp -->
 	<param name="Reg/Strategy" value="0" />
 	<!-- Odom/EstimationType 0=3D->3D, 1=3D->2D --> 
-	<param name="Vis/EstimationType" type="string" value="3" /> 
+	<param name="Vis/EstimationType" type="string" value="2" /> 
 	<!-- Odom/InlierDistance --> 
 	<!-- <param name="Vis/InlierDistance" type="string" value="0.1" /> -->
 	
