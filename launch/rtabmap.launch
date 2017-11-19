@@ -1,4 +1,3 @@
-
 <launch>
      
   <!-- Choose between RGB-D and stereo -->      
@@ -18,7 +17,8 @@
   <arg name="wait_for_transform"      default="0.2"/>
   <arg name="rtabmap_args"            default=""/>              <!-- delete_db_on_start, udebug -->
   <arg name="launch_prefix"           default=""/>              <!-- for debugging purpose, it fills launch-prefix tag of the nodes -->
-  
+  <arg name="do_map"		      default="true"/>
+   
   <!-- if timestamps of the input topics are synchronized using approximate or exact time policy-->
   <arg     if="$(arg stereo)" name="approx_sync"  default="false"/>
   <arg unless="$(arg stereo)" name="approx_sync"  default="true"/>         
@@ -47,7 +47,7 @@
    
   <arg name="visual_odometry"         default="true"/>          <!-- Launch rtabmap visual odometry node -->
   <arg name="odom_topic"              default="/odom"/>         <!-- Odometry topic used if visual_odometry is false -->
-  <arg name="odom_frame_id"           default="vo"/>              <!-- If set, TF is used to get odometry instead of the topic -->
+  <arg name="odom_frame_id"           default=""/>              <!-- If set, TF is used to get odometry instead of the topic -->
   <arg name="odom_args"               default="$(arg rtabmap_args)"/>
   
   <!-- These arguments should not be modified directly, see referred topics without "_relay" suffix above -->
@@ -69,55 +69,36 @@
         <remap from="rgb/image"       to="$(arg rgb_topic_relay)"/>
         <remap from="depth/image"     to="$(arg depth_topic_relay)"/>
         <remap from="rgb/camera_info" to="$(arg camera_info_topic)"/>
-	<!-- Minimum diatance for features --> 
-	<!-- <param name="GFFT/MinDistance" type="string" value="5" /> -->
-	
-	<!-- Correspondences: 0=Features Matching, 1=Optical Flow -->
-	<param name="Vis/CorType" value="0"/>
-        <!-- Match strategy: 0 F2M 1 F2F -->
-	<param name="Odom/Strategy" value="0" /> 
-	<!-- 0=Vis 1=Icp 2=VisIcp -->
-	<param name="Reg/Strategy" value="0" />
-	<!-- Odom/EstimationType 0=3D->3D, 1=3D->2D --> 
-	<param name="Vis/EstimationType" type="string" value="2" /> 
-	<!-- Odom/InlierDistance --> 
-	<!-- <param name="Vis/InlierDistance" type="string" value="0.1" /> -->
-	
-	<!-- Guess Window size -->
-	<!-- <param name="Vis/CorGuessWinSize" value="40"/> -->
-	<!-- Max distance for inliner -->
-	<!-- <param name="Vis/InlierDistance" value="0.2"/> -->
-	<!-- Minimum number of inliners -->
-	<!-- <param name="Vis/MinInliers" value="20"/> -->
-	<!-- 0 no filtering 1 Kalman filter 2 Particle filter --> 
-	<param name="Odom/FilteringStrategy" value="0"/>
-	<!-- Guess from previous -->
-	<param name="Odom/GuessMotion" value="false" /> 
-	<!-- MinDepth -->
-	<!-- <param name="Vis/MinDepth" value="0.1" /> -->
 
 	<param name="frame_id"                    type="string" value="$(arg frame_id)"/>
-        <param name="map_frame_id"		  type="string" value="$(arg map_frame_id)"/>
-	<param name="odom_frame_id"		  type="string" value="$(arg odom_frame_id)"/>
+    <!--    <param name="map_frame_id"		  type="string" value="$(arg map_frame_id)"/> -->
+	<param name="odom_frame_id"		  type="string" value="odom"/>
 	<param name="Odom/ResetCountdown"         value="1" />
 	<param name="wait_for_transform_duration" type="double" value="$(arg wait_for_transform)"/>
         <param name="approx_sync"                 type="bool"   value="$(arg approx_sync)"/>
         <param name="config_path"                 type="string" value="$(arg cfg)"/>
         <param name="queue_size"                  type="int" value="$(arg queue_size)"/>
         <param name="publish_tf"		  type="bool"	value="true"/>
-	<param name="publish_null_when_lost"	  type="bool"	value="false"/>
 	<param name="guess_from_tf"		  type="bool"	value="false"/>
 	<param name="guess_frame_id"		  type="string"	value="guess_frame"/>
- 
-        <param name="Odom/FillInfoData"      type="string" value="true"/>
-        <param name="OdomF2M/MaxSize"        type="string" value="1000"/>
-
+	<param name="Vis/MinInliers"		  value="10"/>
+	<!-- 0: 3D - 3D, 1: 3D-2D -->
+	<param name="Odom/EstimationType" 	  value="1"/>
+	<!-- Minimum Eucliedean distance in Mode 0 (3D-3D) -->
+	<param name="Odom/InlinerDistance"	  value="0.2" />
+        <!-- Reprojection error in Mode 1 (3D->2D) --> 
+	<param name="Odom/PnPReprojError"	  value="5.0" />
+	<!-- Maximum depth --> 
+        <param name="Odom/MaxDepth"		  value="3.0" />
+	<param name="GFFT/QualityLevel"		  value="0.001" />
+	<param name="GFFT/MinDistance"		  value="3" />
+	<param name="Kp/DetectorStrategy"	  value="6" />
 	</node>
     </group>
   
     <!-- Visual SLAM (robot side) -->
     <!-- args: "delete_db_on_start" and "udebug" -->
-    <node name="rtabmap" pkg="rtabmap_ros" type="rtabmap" output="screen" args="$(arg rtabmap_args)" launch-prefix="$(arg launch_prefix)">
+    <node if="$(arg do_map)" name="rtabmap" pkg="rtabmap_ros" type="rtabmap" output="screen" args="$(arg rtabmap_args)" launch-prefix="$(arg launch_prefix)">
       <param     if="$(arg stereo)" name="subscribe_depth"  type="bool" value="false"/>
       <param unless="$(arg stereo)" name="subscribe_depth"  type="bool" value="true"/>
       <param name="subscribe_stereo"     type="bool"   value="$(arg stereo)"/>
@@ -126,7 +107,7 @@
       <param name="Rtabmap/StartNewMapOnLoopClosure" value="true"/>
       <param name="map_frame_id" 	 type="string" value="$(arg map_frame_id)"/>
       <param name="frame_id"             type="string" value="$(arg frame_id)"/>
-      <param name="odom_frame_id"        type="string" value="$(arg odom_frame_id)"/>
+<!--     <param name="odom_frame_id"        type="string" value="$(arg odom_frame_id)"/> -->
 
       <param name="wait_for_transform_duration"  type="double"   value="$(arg wait_for_transform)"/>
       <param name="database_path"        type="string" value="$(arg database_path)"/>
@@ -134,6 +115,8 @@
       <param name="config_path"          type="string" value="$(arg cfg)"/>
       <param name="queue_size"           type="int" value="$(arg queue_size)"/>
       
+      <param name="Kp/DetectorStrategy"	 value="6" />
+
       <remap from="rgb/image"       to="$(arg rgb_topic_relay)"/>
       <remap from="depth/image"     to="$(arg depth_topic_relay)"/>
       <remap from="rgb/camera_info" to="$(arg camera_info_topic)"/>

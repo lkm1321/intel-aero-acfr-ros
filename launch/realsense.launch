@@ -14,12 +14,12 @@
 
   <!-- Best know configuration for generating depth registered point cloud. -->
   <arg name="mode"            default="manual" />
-  <arg name="color_width"     default="640" />
-  <arg name="color_height"    default="480" />
-  <arg name="depth_width"     default="480" />
-  <arg name="depth_height"    default="360" />
-  <arg name="depth_fps"       default="60" />
-  <arg name="color_fps"       default="60" />
+  <arg name="color_width"     default="320" />
+  <arg name="color_height"    default="240" />
+  <arg name="depth_width"     default="320" />
+  <arg name="depth_height"    default="240" />
+  <arg name="depth_fps"       default="30" />
+  <arg name="color_fps"       default="30" />
 
   <!-- Arguments for remapping all device namespaces -->
   <arg name="depth"            default="depth" />
@@ -69,7 +69,7 @@
 
     <!-- Load driver -->
     <include if="$(arg load_driver)"
-             file="$(find realsense_camera)/launch/includes/nodelet_rgbd.launch.xml">
+             file="$(find intel-aero-acfr)/launch/nodelet_rgbd.launch.xml">
       <arg name="manager"                   value="$(arg manager)" />
       <arg name="camera"                    value="$(arg camera)" />
       <arg name="camera_type"               value="$(arg camera_type)" />
